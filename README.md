@@ -36,7 +36,7 @@ outputs
 
 Tweeks
 
-​	
+necesito un requirements.txt	
 
 #### AWS textract
 
