@@ -1,4 +1,4 @@
-## OCR
+## OCR module
 
 Usamos:
 
@@ -6,6 +6,9 @@ Usamos:
 - [black](https://black.readthedocs.io/en/stable/) como code formatter
 - [gitflow](https://nvie.com/posts/a-successful-git-branching-model/) como branching model
 - [numpy docstring standart](https://numpy.org/devdocs/docs/howto_document.html#id10) para documentar nuestras funciones y módulos (para ligarlo con sphinx y hacer la documentación automática)
+
+
+## Usage
 
 ```python
 from OCR.ocr import Ocr
