@@ -9,6 +9,7 @@ from google.protobuf import json_format
 import os
 import io
 import math
+import random
 
 # Credentials
 from .ocr_document import Document
@@ -52,7 +53,8 @@ class GoogleOcr(Document):
 
         # Google buckets and paths
         self.bucket_name = "hercules_demos"
-        self.blob_path = "temp_folder/"
+        rand = str(int(random.uniform(1,10000000)))
+        self.blob_path = f"temp_folder{rand}/"
         self.blob_filename = "temporary.pdf"
         self.blob_name = self.blob_path + self.blob_filename
 

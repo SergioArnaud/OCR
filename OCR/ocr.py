@@ -1,7 +1,6 @@
 from .aws_ocr import AwsOcr
 from .tika_ocr import TikaOcr
 from .google_ocr import GoogleOcr
-import textwrap
 
 actions = {
     "google": ["ocr_text"],
@@ -19,7 +18,7 @@ class Ocr:
 
         self.engine = engine
         self._validate_engine()
-        
+
         self.action = action
         self._validate_engine_action()
 
@@ -37,10 +36,10 @@ class Ocr:
     def _validate_engine_action(self):
         if self.action not in self.actions[self.engine]:
             raise Exception(
-                    f""" Given action {self.action} can't be used with  
+                f""" Given action {self.action} can't be used with  
                     {self.engine} engine, the options you have are 
                     {str(self.actions[self.engine])} """
-                )
+            )
 
     def _validate_engine(self):
         if self.engine not in self.actions.keys():
@@ -59,6 +58,15 @@ class Ocr:
         self.aws_region = region
 
     def process_file(self):
+        def _add_atributes(list_attributes):
+            for attribute in list_attributes:
+                val = (
+                    getattr(self.Engine, attribute)
+                    if attribute in dir(self.Engine)
+                    else None
+                )
+                setattr(self, attribute, val)
+
         if self.engine == "aws":
             Engine = AwsOcr(
                 self.file_path,
@@ -74,14 +82,26 @@ class Ocr:
             Engine = GoogleOcr(self.file_path)
 
         Engine.pipeline_extraction()
-
-        self.pages_text = Engine.pages_text
-        self.text = Engine.text
-        self.pages_response = Engine.pages_response
-        self.num_pages = Engine.num_pages
-        self.pages_tables = Engine.pages_tables
-
         self.Engine = Engine
 
+        list_attributes = [
+            "pages_text",
+            "text",
+            "pages_response",
+            "num_pages",
+            "pages_tables",
+            "forms",
+            "blocks",
+        ]
 
+        _add_atributes(list_attributes)
+
+        #self.pages_text = Engine.pages_text
+        #self.text = Engine.text
+        #self.pages_response = Engine.pages_response
+        #self.num_pages = Engine.num_pages
+        #self.pages_tables = (
+        #    Engine.pages_tables if "pages_tables" in dir(Engine) else None
+        #)
+        #self.forms = Engine.forms if "forms" in dir(Engine) else None
 
