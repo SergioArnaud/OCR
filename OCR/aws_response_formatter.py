@@ -17,8 +17,25 @@ class ResponseFormatter:
                 class before building a response formatter object"""
             )
 
+        # Get all response blocks
         self.blocks = self.response["Blocks"]
+
+        # Get blocks mapping
         self.blocks_map = {block["Id"]: block for block in self.blocks}
+
+        # Get key mapping (for forms)
+        self.key_map = {
+            block["Id"]: block
+            for block in self.blocks
+            if block["BlockType"] == "KEY_VALUE_SET" and "KEY" in block["EntityTypes"]
+        }
+        # Get value mapping (for forms)
+        self.value_map = {
+            block["Id"]: block
+            for block in self.blocks
+            if block["BlockType"] == "KEY_VALUE_SET"
+            and "KEY" not in block["EntityTypes"]
+        }
 
         self.pages_text = []
         self.pages_response = []
@@ -40,6 +57,7 @@ class ResponseFormatter:
                 self.pages_tables[table["page"] - 1].append(table["table"])
 
             self.num_tables = len(self.tables)
+            self._get_kv_relationship()
 
             # Falta añadir formas
 
@@ -58,31 +76,9 @@ class ResponseFormatter:
                 text += block["Text"] + " "
                 blocks.append(block)
             first_iteration = False
+
         self.pages_text.append(text)
         self.pages_response.append(blocks)
-
-    def _get_blocks_per_page(self):
-        text = []
-        for block in self.blocks:
-            if block["BlockType"] == "PAGE":
-                if text != "":
-                    self.pages_text.append(text)
-                    text = ""
-            elif "Text" in block:
-                text += block["Text"] + " "
-
-    def _get_table(self, table):
-        dict_table = {}
-        page = table["Page"] if 'Page' in table else 1
-        for relationship in table["Relationships"]:
-            if relationship["Type"] == "CHILD":
-                for child_id in relationship["Ids"]:
-                    cell = self.blocks_map[child_id]
-                    if cell["BlockType"] == "CELL":
-                        dict_table.setdefault(cell["RowIndex"], {})[
-                            cell["ColumnIndex"]
-                        ] = self._get_block_text(cell)
-        return {"page": page, "table": dict_table}
 
     def _get_block_text(self, block):
         text = ""
@@ -93,7 +89,38 @@ class ResponseFormatter:
                         word = self.blocks_map[child_id]
                         if word["BlockType"] == "WORD":
                             text += word["Text"] + " "
+                        if word["BlockType"] == "SELECTION_ELEMENT":
+                            if word["SelectionStatus"] == "SELECTED":
+                                text += "X "
         return text
+
+    def _get_table(self, table):
+        dict_table = {}
+        page = table["Page"] if "Page" in table else 1
+        for relationship in table["Relationships"]:
+            if relationship["Type"] == "CHILD":
+                for child_id in relationship["Ids"]:
+                    cell = self.blocks_map[child_id]
+                    if cell["BlockType"] == "CELL":
+                        dict_table.setdefault(cell["RowIndex"], {})[
+                            cell["ColumnIndex"]
+                        ] = self._get_block_text(cell)
+        return {"page": page, "table": dict_table}
+
+    def _get_kv_relationship(self):
+        def _find_value_block(key_block, value_map):
+            for relationship in key_block["Relationships"]:
+                if relationship["Type"] == "VALUE":
+                    for value_id in relationship["Ids"]:
+                        value_block = value_map[value_id]
+            return value_block
+
+        self.forms = {}
+        for block_id, key_block in self.key_map.items():
+            value_block = _find_value_block(key_block, self.value_map)
+            key = self._get_block_text(key_block)
+            val = self._get_block_text(value_block)
+            self.forms[key] = val
 
     def table_to_pandas(self, num_table):
         return pd.DataFrame.from_dict(self.tables[num_table], orient="index")

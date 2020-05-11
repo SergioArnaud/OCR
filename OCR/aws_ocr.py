@@ -42,7 +42,7 @@ class AwsOcr(Document):
     file_path : str
         local path to the file that will be processed 
     action : str
-        action to perform ("ocr_text", "ocr_tables", "forms", "tables-forms")
+        action to perform ("ocr_text", "ocr_tables", "ocr_forms", "tables-forms")
     bucket_name : str
         bucket in s3 in which files will be stored
     folder : str
@@ -132,7 +132,7 @@ class AwsOcr(Document):
         self._upload_to_s3()
 
     def _validate_action(self):
-        if self.action not in ["ocr_text", "ocr_tables", "forms", "tables-forms"]:
+        if self.action not in ["ocr_text", "ocr_tables", "ocr_forms", "ocr_tables_forms"]:
             raise Exception(
                 f"""Action {self.action} isn't supported, use one from 
                 {str(["text", "tables", "forms", "tables-forms"])}"""
@@ -155,7 +155,7 @@ class AwsOcr(Document):
 
     def pipeline_extraction(self):
         """Main function to perform the extraction
-        """        
+        """
         self._process_ocr()
         self._process_response()
 
@@ -164,15 +164,15 @@ class AwsOcr(Document):
             self._ocr_text()
         else:
             FeatureTypes = ["TABLES", "FORMS"]
-            if self.action == "tables":
+            if self.action == "ocr_tables":
                 FeatureTypes = ["TABLES"]
-            if self.action == "forms":
+            if self.action == "orc_forms":
                 FeatureTypes = ["FORMS"]
             self._ocr_analysis(FeatureTypes)
 
     def _process_response(self):
         """Uses the ResponseFormatter to format the response to a nice common format.
-        """        
+        """
         Formatter = ResponseFormatter(self)
 
         self.pages_text = Formatter.pages_text
@@ -180,6 +180,7 @@ class AwsOcr(Document):
         self.pages_response = Formatter.pages_response
         self.num_pages = Formatter.num_pages
         self.pages_tables = Formatter.pages_tables
+        self.forms = Formatter.forms
 
     def _ocr_text(self):
         """Return the text from the current file.
