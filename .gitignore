@@ -2,4 +2,7 @@
 
 **.ipynb
 
-*__pycache__/*
+__pycache__/
+
+*google_credentials.json 
+*keysLegislation.py
