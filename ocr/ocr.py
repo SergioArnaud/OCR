@@ -68,7 +68,7 @@ class Ocr:
                 setattr(self, attribute, val)
 
         if self.engine == "aws":
-            Engine = AwsOcr(
+            self.Engine = AwsOcr(
                 self.file_path,
                 self.action,
                 self.aws_bucket,
@@ -77,12 +77,11 @@ class Ocr:
             )
         if self.engine == "tika":
             ocr = True if "ocr" in self.action else False
-            Engine = TikaOcr(self.file_path, ocr)
+            self.Engine = TikaOcr(self.file_path, ocr)
         if self.engine == "google":
-            Engine = GoogleOcr(self.file_path)
+            self.Engine = GoogleOcr(self.file_path)
 
-        Engine.pipeline_extraction()
-        self.Engine = Engine
+        self.Engine.pipeline_extraction()
 
         list_attributes = [
             "pages_text",
@@ -95,13 +94,4 @@ class Ocr:
         ]
 
         _add_atributes(list_attributes)
-
-        #self.pages_text = Engine.pages_text
-        #self.text = Engine.text
-        #self.pages_response = Engine.pages_response
-        #self.num_pages = Engine.num_pages
-        #self.pages_tables = (
-        #    Engine.pages_tables if "pages_tables" in dir(Engine) else None
-        #)
-        #self.forms = Engine.forms if "forms" in dir(Engine) else None
 
