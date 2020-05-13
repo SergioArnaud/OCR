@@ -20,16 +20,7 @@ from .aws_response_formatter import ResponseFormatter
 admitted_extensions = ["pdf", "jpg", "jpeg", "png"]
 
 
-class Document:
-    def __init__(self, file_path):
-        self.file_path = file_path
-        self.filename = file_path.split("/")[-1]
-        self.folder = "/".join(file_path.split("/")[:-1]) + "/"
-        self.extension = file_path.split(".")[-1]
-        self.name = self.filename.replace(f'.{self.extension}','')
-
-
-class AwsOcr(Document):
+class AwsOcr():
     """Class with AWS OCR functions to extract text, tables and forms from documents in s3.
 
     Once you've given the action ("ocr_text", "ocr_tables", "forms", "tables-forms")
