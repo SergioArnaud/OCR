@@ -38,28 +38,20 @@ class AwsOcr():
 
     Attributes
     ----------
-    file_path : str
-        local path to the file that will be processed 
+    filename : str
+        s3 filename to the file that will be processed 
     action : str
-        action to perform ("ocr_text", "ocr_tables", "ocr_forms", "tables-forms")
+        action to perform ("ocr_text", "ocr_tables", "ocr_forms", "ocr_tables_forms")
     bucket_name : str
-        bucket in s3 in which files will be stored
-    folder : str
-        folder inside s3 bucket in which the file will be stored
+        bucket in s3 in which files are stored
     region : str
         aws region of the bucket (verify that textract is available in that region)
-    filename : str
-        name of the file to be processed
     s3 : boto3.resource
         s3 resource
     textract : boto3.client
         textract client
     sqs : boto3.client
         sqs client
-    text_response : dict
-        after using `get_text` function, the result goes to this atribute
-    analysis_response : dict
-        after using `get_analysis` function, the result goes to this atribute
     pages_text : list
         list with the text of the page i at the ith position
     text : str
@@ -69,7 +61,9 @@ class AwsOcr():
     num_pages: int
         number of pages of the document
     pages_tables: list
-        ist with the tables of the page i at the ith position
+        list with the tables of the page i at the ith position
+    forms : dict
+        dictionary with the forms detected in the document
 
     Raises
     ------
