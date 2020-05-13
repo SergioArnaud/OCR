@@ -13,6 +13,7 @@ import time
 
 # 3rd party libraries
 import boto3
+import pandas as pd
 
 # Own
 from .aws_response_formatter import ResponseFormatter
@@ -308,3 +309,13 @@ class AwsOcr(Document):
                         jobFound = True
 
         return ans
+
+    def table_to_pandas(self, num_table):
+        return pd.DataFrame.from_dict(self.tables[num_table], orient="index")
+
+    def tables_to_xlsx(self, filename="tables_found.xlsx"):
+        writer = pd.ExcelWriter(filename, engine="xlsxwriter")
+        for k, table in enumerate(self.tables):
+            df = self.table_to_pandas(k)
+            df.to_excel(writer, sheet_name="Table_{}".format(str(k)))
+        writer.save()
