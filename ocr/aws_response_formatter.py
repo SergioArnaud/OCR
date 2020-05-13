@@ -18,6 +18,9 @@ class ResponseFormatter:
             )
 
         # Get all response blocks
+        if 'Blocks' not in self.response:
+            print(self.response)
+            raise 
         self.blocks = self.response["Blocks"]
 
         # Get blocks mapping
@@ -121,13 +124,3 @@ class ResponseFormatter:
             key = self._get_block_text(key_block)
             val = self._get_block_text(value_block)
             self.forms[key] = val
-
-    def table_to_pandas(self, num_table):
-        return pd.DataFrame.from_dict(self.tables[num_table], orient="index")
-
-    def tables_to_xlsx(self, filename="tables_found.xlsx"):
-        writer = pd.ExcelWriter(filename, engine="xlsxwriter")
-        for k, table in enumerate(self.tables):
-            df = self.table_to_pandas(k)
-            df.to_excel(writer, sheet_name="Table_{}".format(str(k)))
-        writer.save()
