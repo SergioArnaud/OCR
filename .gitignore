@@ -7,3 +7,9 @@ __pycache__
 
 *google_credentials.json 
 *keysLegislation.py
+
+#lambda stuff
+package.json
+package-lock.json
+node_modules
+.serverless/
