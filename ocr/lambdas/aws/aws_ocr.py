@@ -13,14 +13,45 @@ import time
 
 # 3rd party libraries
 import boto3
-import pandas as pd
 
 # Own
-from .aws_response_formatter import ResponseFormatter
+from aws_response_formatter import ResponseFormatter
+
+# from aws_keys import ACCESS_KEY, SECRET_KEY
+
 admitted_extensions = ["pdf", "jpg", "jpeg", "png"]
 
+# Textrcat SNS, role and queue url
+notification_channel = {
+    "SNSTopicArn": "arn:aws:sns:us-east-1:401913772240:AmazonTextractOcrTopic",
+    "RoleArn": "arn:aws:iam::401913772240:role/TextractOcrRole",
+}
+url_queue = "https://sqs.us-east-1.amazonaws.com/401913772240/TextractOcrQueue"
 
-class AwsOcr():
+
+def lambda_handler(event, context):
+    bucket = event["bucket"]
+    filename = event["filename"]
+    action = event["action"]
+
+    doc = AwsOcr(filename, bucket, action)
+    doc.pipeline_extraction()
+
+    response = {
+        "text": doc.text,
+        "pages_response": doc.pages_response,
+        "num_pages": doc.num_pages,
+        "pages_text": doc.pages_text,
+    }
+    if "tables" in action:
+        response["pages_tables"] = doc.pages_tables
+    if "forms" in action:
+        response["forms"] = doc.forms
+
+    return response
+
+
+class AwsOcr:
     """Class with AWS OCR functions to extract text, tables and forms from documents in s3.
 
     Once you've given the action ("ocr_text", "ocr_tables", "forms", "tables-forms")
@@ -74,11 +105,7 @@ class AwsOcr():
     """
 
     def __init__(
-        self,
-        filename,
-        bucket_name,
-        action,
-        region="us-east-1",
+        self, filename, bucket_name, action, region="us-east-1",
     ):
         """Initialize the AWSOCR class.
         
@@ -112,21 +139,25 @@ class AwsOcr():
         # Validating action
         self.action = action
         self._validate_action()
-        
+
         # Region and s3 document
         self.region = region
         self.document = {"S3Object": {"Bucket": self.bucket, "Name": self.filename}}
 
         # Aws clients and resources
-        self.s3 = self._get_resource_aws("s3")
         self.textract = self._get_client_aws("textract")
         self.sqs = self._get_client_aws("sqs")
 
     def _validate_action(self):
-        if self.action not in ["ocr_text", "ocr_tables", "ocr_forms", "ocr_tables_forms"]:
+        if self.action not in [
+            "ocr_text",
+            "ocr_tables",
+            "ocr_forms",
+            "ocr_tables_forms",
+        ]:
             raise Exception(
                 f"""Action {self.action} isn't supported, use one from 
-                {str(["text", "tables", "forms", "tables-forms"])}"""
+                {str(["ocr_text", "ocr_tables", "ocr_forms", "ocr_tables_forms"])}"""
             )
 
     def _validate_extension(self):
@@ -138,11 +169,6 @@ class AwsOcr():
 
     def _get_resource_aws(self, service):
         return boto3.resource(service, region_name=self.region)
-
-    def _upload_to_s3(self):
-        return self.s3.Object(self.bucket, self.filename).put(
-            Body=open(self.file_path, "rb"), ACL="public-read"
-        )
 
     def pipeline_extraction(self):
         """Main function to perform the extraction
@@ -184,10 +210,7 @@ class AwsOcr():
         if self.extension == "pdf":
             response = self.textract.start_document_text_detection(
                 DocumentLocation=self.document,
-                NotificationChannel={
-                    "SNSTopicArn": "arn:aws:sns:us-east-1:401913772240:AmazonTextractTopic",
-                    "RoleArn": "arn:aws:iam::401913772240:role/Textract_test_role",
-                },
+                NotificationChannel=notification_channel,
             )
 
             print("Start Job Id: " + response["JobId"])
@@ -212,10 +235,7 @@ class AwsOcr():
             response = self.textract.start_document_analysis(
                 DocumentLocation=self.document,
                 FeatureTypes=FeatureTypes,
-                NotificationChannel={
-                    "SNSTopicArn": "arn:aws:sns:us-east-1:401913772240:AmazonTextractTopic",
-                    "RoleArn": "arn:aws:iam::401913772240:role/Textract_test_role",
-                },
+                NotificationChannel=notification_channel,
             )
 
             print("Start Job Id: " + response["JobId"])
@@ -268,7 +288,6 @@ class AwsOcr():
                 ans["Blocks"].extend(aux["Blocks"])
             return ans
 
-        url_queue = "https://sqs.us-east-1.amazonaws.com/401913772240/Textract_queue"
         dot_line = 0
         jobFound = False
 
@@ -299,13 +318,3 @@ class AwsOcr():
                         jobFound = True
 
         return ans
-
-    def table_to_pandas(self, num_table):
-        return pd.DataFrame.from_dict(self.tables[num_table], orient="index")
-
-    def tables_to_xlsx(self, filename="tables_found.xlsx"):
-        writer = pd.ExcelWriter(filename, engine="xlsxwriter")
-        for k, table in enumerate(self.tables):
-            df = self.table_to_pandas(k)
-            df.to_excel(writer, sheet_name="Table_{}".format(str(k)))
-        writer.save()

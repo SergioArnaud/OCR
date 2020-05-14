@@ -1,0 +1,23 @@
+service: ocr 
+
+plugins:
+  - serverless-python-requirements
+  - serverless-prune-plugin
+custom:
+  pythonRequirements:
+    dockerizePip: true
+
+provider:
+  name: aws
+  runtime: python3.6
+  role: arn:aws:iam::401913772240:role/lambda-textract-execution-role
+  memorySize: 512
+  timeout: 520
+  stage: dev
+  region: us-east-1
+  deploymentBucket:
+    name: dive-serverless-deployments-east1
+
+functions:
+  aws_ocr:
+    handler: aws_ocr.lambda_handler

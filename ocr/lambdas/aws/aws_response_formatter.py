@@ -1,5 +1,3 @@
-import pandas as pd
-
 
 class ResponseFormatter:
     def __init__(self, Aws_ocr):
