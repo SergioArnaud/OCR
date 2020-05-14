@@ -19,6 +19,12 @@ import pandas as pd
 from .aws_response_formatter import ResponseFormatter
 from .ocr_document import Document
 
+# Textrcat SNS, role and queue url
+notification_channel = {
+    "SNSTopicArn": 'arn:aws:sns:us-east-1:401913772240:AmazonTextractOcrTopic',
+    "RoleArn": 'arn:aws:iam::401913772240:role/TextractOcrRole',
+}
+url_queue = 'https://sqs.us-east-1.amazonaws.com/401913772240/TextractOcrQueue'
 admitted_extensions = ["pdf", "jpg", "jpeg", "png"]
 
 
@@ -136,7 +142,7 @@ class AwsOcr(Document):
         if self.action not in ["ocr_text", "ocr_tables", "ocr_forms", "ocr_tables_forms"]:
             raise Exception(
                 f"""Action {self.action} isn't supported, use one from 
-                {str(["text", "tables", "forms", "tables-forms"])}"""
+                {str(["ocr_text", "ocr_tables", "ocr_forms", "ocr_tables_forms"])}"""
             )
 
     def _validate_extension(self):
@@ -194,10 +200,7 @@ class AwsOcr(Document):
         if self.extension == "pdf":
             response = self.textract.start_document_text_detection(
                 DocumentLocation=self.document,
-                NotificationChannel={
-                    "SNSTopicArn": "arn:aws:sns:us-east-1:401913772240:AmazonTextractTopic",
-                    "RoleArn": "arn:aws:iam::401913772240:role/Textract_test_role",
-                },
+                NotificationChannel=notification_channel,
             )
 
             print("Start Job Id: " + response["JobId"])
@@ -222,10 +225,7 @@ class AwsOcr(Document):
             response = self.textract.start_document_analysis(
                 DocumentLocation=self.document,
                 FeatureTypes=FeatureTypes,
-                NotificationChannel={
-                    "SNSTopicArn": "arn:aws:sns:us-east-1:401913772240:AmazonTextractTopic",
-                    "RoleArn": "arn:aws:iam::401913772240:role/Textract_test_role",
-                },
+                NotificationChannel=notification_channel,
             )
 
             print("Start Job Id: " + response["JobId"])
@@ -277,8 +277,7 @@ class AwsOcr(Document):
                 aux = get_function(JobId=response["JobId"], NextToken=aux["NextToken"])
                 ans["Blocks"].extend(aux["Blocks"])
             return ans
-
-        url_queue = "https://sqs.us-east-1.amazonaws.com/401913772240/Textract_queue"
+            
         dot_line = 0
         jobFound = False
 
