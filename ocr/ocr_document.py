@@ -29,7 +29,7 @@ class Document:
         return len(pages)
 
     def _get_num_pages(self):
-        if self.extension == '.pdf':
+        if self.extension == 'pdf':
             return PdfFileReader(open(self.file_path, "rb")).numPages
         else:
             return 1
